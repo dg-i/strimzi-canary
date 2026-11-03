@@ -11,6 +11,8 @@
 * Upgraded to OpenTelemetry v1.47.0
 * The `jaeger` tracing exporter type is deprecated: the Jaeger exporter was removed from OpenTelemetry Go, so it now falls back to the `otlp` exporter (Jaeger supports OTLP natively)
 * The e2e tests run against single node KRaft Kafka 4.0.0, 4.1.0 and 4.2.0 clusters instead of a ZooKeeper based one
+* Moved the CI from Azure Pipelines to GitHub Actions
+* The container images are multi-arch (`linux/amd64` and `linux/arm64`) and published to `ghcr.io/dg-i/strimzi-canary`
 * Fixed error-related metrics starting from 0 (#215)
 * Add connection_total metric (deprecating connection_error_total metric which will be removed in future)
 

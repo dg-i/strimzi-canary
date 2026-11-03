@@ -23,34 +23,28 @@ This is implemented in the `Makefiles`, you just need to run the command `RELEAS
 For example, for release 0.1.0, you would run `RELEASE_VERSION=0.1.0 make release`.
 
 Review and commit the changes done by the `make` command and push them into the repository.
-The build pipeline should automatically start for any new commit pushed into the release branch.
+The `Build` workflow should automatically start for any new commit pushed into the release branch.
 
-### Running the release pipeline
+### Running the release workflow
 
-Wait until the build pipeline is (successfully) finished for the last commit in the release branch.
-Then run the release pipeline manually from the Azure Pipelines UI.
-The release pipeline is names `canary-release`.
-When starting the new run, it will ask for several parameters which you need to fill:
+Wait until the `Build` workflow is (successfully) finished for the last commit in the release branch.
+Then run the `Release` workflow manually from the GitHub Actions UI (or with `gh workflow run release.yaml --ref release-<Major>.<Minor>.x -f releaseVersion=<version>`), selecting the release branch.
+When starting the new run, it will ask for the following parameters:
 
 * Release version (for example `0.1.0`)
-* Release suffix (for example `0` - it is used to create the suffixed images such as `strimzi/canary:0.1.0-0` to identify different builds)
-* Source pipeline ID (Currently, only the build pipeline with ID `42` can be used and this value is already filled as default)
-* Source build ID (the ID of the build from which the artifacts should be used - use the long build ID from the URL and not the shorter build number)
+* Release suffix (optional, for example `0` - it is used to create an additional suffixed image such as `ghcr.io/dg-i/strimzi-canary:0.1.0-0` to identify different builds)
 
-The release pipeline will push the images to the registry.
-It will also prepare in artifacts the ZIP and TAR.GZ archives with the installation files.
-These will be later attached to the GitHub releases.
+The release workflow builds the binaries for `linux/amd64` and `linux/arm64` from the release branch and pushes the multi-arch images to `ghcr.io/dg-i/strimzi-canary`.
+It also creates a draft GitHub release, targeting the release branch commit, with the ZIP and TAR.GZ archives of the installation files attached.
 
 ### Smoke tests
 
-After the release pipeline is finished, it is always good idea to do some smoke tests of the images to double check they were pushed correctly.
+After the release workflow is finished, it is always good idea to do some smoke tests of the images to double check they were pushed correctly.
 
 ### Creating the release
 
-After the release pipeline is finished, the release has to be created:
-
-* Tag the right commit from the release branch with the release name (e.g. `git tag 0.1.0`) and push it to GitHub
-* On GitHub, create the release and attach the ZIP / TAR.GZ artifacts from the release pipeline to it
+After the smoke tests, review and publish the draft GitHub release created by the release workflow.
+Publishing it creates the release tag (e.g. `0.1.0`) on the release branch commit.
 
 ### Announcements
 
@@ -62,10 +56,11 @@ Announce the release on following channels:
 
 ### Release candidates
 
-Release candidates are built with the same release pipeline as the final releases.
-When starting the pipeline, use the RC name as the release version.
+Release candidates are built with the same release workflow as the final releases.
+When starting the workflow, use the RC name as the release version.
 For example `0.1.0-rc1` or `0.1.0-rc2`.
-For release pipelines, you should skip the suffixed build since it is not needed.
+For release candidates, you should leave the release suffix empty since the suffixed build is not needed.
+The draft GitHub release is marked as pre-release automatically.
 
 When doing the release candidates, the release branch should be already prepared for the final release.
 E.g. when building `0.1.0-rc1`, the release branch should have already the `0.1.0` versions set.

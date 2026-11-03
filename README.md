@@ -1,11 +1,12 @@
-[![Build Status](https://dev.azure.com/cncf/strimzi/_apis/build/status/canary?branchName=main)](https://dev.azure.com/cncf/strimzi/_build/latest?definitionId=42&branchName=main)
-[![GitHub release](https://img.shields.io/github/release/strimzi/strimzi-canary.svg)](https://github.com/strimzi/strimzi-canary/releases/latest)
+[![Build Status](https://github.com/dg-i/strimzi-canary/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/dg-i/strimzi-canary/actions/workflows/build.yaml)
+[![GitHub release](https://img.shields.io/github/release/dg-i/strimzi-canary.svg)](https://github.com/dg-i/strimzi-canary/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/strimziio?style=social)](https://twitter.com/strimziio)
 
 # Strimzi canary
 
-Based on the proposal [86 - Archive Canary project](https://github.com/strimzi/proposals/blob/main/086-archive-canary.md) this repository is archived.
+Based on the proposal [86 - Archive Canary project](https://github.com/strimzi/proposals/blob/main/086-archive-canary.md) the upstream repository is archived.
+This fork keeps it maintained (for example adding support for Apache Kafka 4.x), the container images are published to `ghcr.io/dg-i/strimzi-canary`.
 
 ## Summary
 This repository contains the Strimzi canary tool implementation.
@@ -25,7 +26,7 @@ For Kafka versions newer than the ones known by the Sarama library, use the newe
 
 ## Deployment
 
-Deploy the Strimzi canary tool to the Kubernetes cluster where your Apache Kafka cluster is running. Download and unzip the installation files from [Releases](https://github.com/strimzi/strimzi-canary/releases), then edit the `KAFKA_BOOTSTRAP_SERVERS` environment variable in the `Deployment` file to specify the bootstrap servers for connecting to the Apache Kafka cluster.
+Deploy the Strimzi canary tool to the Kubernetes cluster where your Apache Kafka cluster is running. Download and unzip the installation files from [Releases](https://github.com/dg-i/strimzi-canary/releases), then edit the `KAFKA_BOOTSTRAP_SERVERS` environment variable in the `Deployment` file to specify the bootstrap servers for connecting to the Apache Kafka cluster.
 
 The `Deployment` file also has the following configuration by default:
 

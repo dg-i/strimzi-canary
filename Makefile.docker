@@ -1,6 +1,7 @@
 DOCKER_CMD ?= docker
-DOCKER_REGISTRY ?= docker.io
-DOCKER_ORG ?= $(USER)
+DOCKER_REGISTRY ?= ghcr.io
+DOCKER_ORG ?= dg-i
+DOCKER_REPO ?= strimzi-canary
 DOCKER_TAG ?= latest
 BUILD_TAG ?= latest
 
@@ -8,7 +9,8 @@ BUILD_TAG ?= latest
 docker_build:
 	# Build Docker image ...
 	echo "Building Docker image ..."
-	${DOCKER_CMD} build -t strimzi/${PROJECT_NAME}:latest .
+	# Build for the same architecture as the binary (GOARCH, see Makefile.binary)
+	${DOCKER_CMD} build --platform linux/$(GOARCH) -t strimzi/${PROJECT_NAME}:latest .
 	# Also tag with $(BUILD_TAG)
 	${DOCKER_CMD} tag strimzi/$(PROJECT_NAME):latest strimzi/$(PROJECT_NAME):$(BUILD_TAG)
 
@@ -27,10 +29,10 @@ docker_load:
 .PHONY: docker_tag
 docker_tag:
 	# Tag the $(BUILD_TAG) image we built with the given $(DOCKER_TAG) tag
-	${DOCKER_CMD} tag strimzi/$(PROJECT_NAME):$(BUILD_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+	${DOCKER_CMD} tag strimzi/$(PROJECT_NAME):$(BUILD_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_REPO):$(DOCKER_TAG)
 
 .PHONY: docker_push
 docker_push: docker_tag
 	# Push the $(DOCKER_TAG)-tagged image to the registry
 	echo "Pushing Docker image ..."
-	${DOCKER_CMD} push ${DOCKER_REGISTRY}/${DOCKER_ORG}/${PROJECT_NAME}:${DOCKER_TAG}
+	${DOCKER_CMD} push ${DOCKER_REGISTRY}/${DOCKER_ORG}/${DOCKER_REPO}:${DOCKER_TAG}
