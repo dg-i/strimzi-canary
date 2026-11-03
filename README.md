@@ -12,6 +12,17 @@ This repository contains the Strimzi canary tool implementation.
 The canary tool acts as an indicator of whether [Apache Kafka®](https://kafka.apache.org) clusters are operating correctly.
 This is achieved by creating a canary topic and periodically producing and consuming events on the topic and getting metrics out of these exchanges.
 
+## Supported Kafka versions
+
+| Kafka version | Status |
+|---|---|
+| 4.0.0, 4.1.0, 4.2.0 | Supported, covered by the e2e tests (single node KRaft clusters) |
+| 4.3.x and newer 4.x | Untested, expected to work |
+| Older than 4.0.0 (ZooKeeper or KRaft based) | Untested, expected to work (previous canary releases were tested against Kafka 2.8.0) |
+
+Set `KAFKA_VERSION` to the version of your Kafka cluster.
+For Kafka versions newer than the ones known by the Sarama library, use the newest tested version (`4.2.0`).
+
 ## Deployment
 
 Deploy the Strimzi canary tool to the Kubernetes cluster where your Apache Kafka cluster is running. Download and unzip the installation files from [Releases](https://github.com/strimzi/strimzi-canary/releases), then edit the `KAFKA_BOOTSTRAP_SERVERS` environment variable in the `Deployment` file to specify the bootstrap servers for connecting to the Apache Kafka cluster.
@@ -68,7 +79,7 @@ The configuration file described in more detail the next section.
 | `PRODUCER_LATENCY_BUCKETS` | Buckets of the histogram related to the producer latency metric (in ms). | `2,5,10,20,50,100,200,400` |  |
 | `ENDTOEND_LATENCY_BUCKETS` | Buckets of the histogram related to the end to end latency metric between producer and consumer (in ms). | `5,10,20,50,100,200,400,800` |  |
 | `EXPECTED_CLUSTER_SIZE` | Expected number of brokers in the Kafka cluster where the canary connects to. This parameter avoids that the tool runs more partitions reassignment of the topic while the Kafka cluster is starting up and the brokers are coming one by one. `-1` means "dynamic" reassignment as described above. When greater than 0, the canary waits for the Kafka cluster having the expected number of brokers running before creating the topic and assigning the partitions | `-1` |  |
-| `KAFKA_VERSION` | Version of the Kafka cluster | `3.2.0` |  |
+| `KAFKA_VERSION` | Version of the Kafka cluster (see [Supported Kafka versions](#supported-kafka-versions)) | `3.2.0` |  |
 | `SARAMA_LOG_ENABLED` | Enables the Sarama client logging. | `false` | `saramaLogEnabled` |
 | `VERBOSITY_LOG_LEVEL` | Verbosity of the tool logging. Allowed values 0 = INFO, 1 = DEBUG, 2 = TRACE | `0` | `verbosityLogLevel` |
 | `TLS_ENABLED` | If the canary has to use TLS to connect to the Kafka cluster. | `false` |  |
@@ -85,7 +96,7 @@ The configuration file described in more detail the next section.
 | `STATUS_TIME_WINDOW_MS` | It defines the sliding time window size (in ms) in which status information are sampled. | `300000` |  |
 | `DYNAMIC_CONFIG_FILE` | Location of an optional external config file that provides configuration at runtime. | empty |  |
 | `DYNAMIC_CONFIG_WATCHER_INTERVAL` | Interval that dynamic config file is examined for changes in content (in ms)  | `30000` |  |
-| `EXPORTER_TYPE_TRACING` | Tracing Exporter use. Empty value disable tracing, other possible values are `jaeger` or `otlp`  | `` |  |
+| `EXPORTER_TYPE_TRACING` | Tracing Exporter use. Empty value disable tracing, other possible values are `otlp` or `jaeger` (deprecated, it uses the `otlp` exporter as well)  | `` |  |
 | `PROMETHEUS_CONSTANT_LABELS` | A list of semicolon separated `key=value` pairs (i.e. `my-label-1=one;my-label-2=two`) that will be set as constant labels on all prometheus metrics. | empty |  |
 
 ## Dynamic Configuration file

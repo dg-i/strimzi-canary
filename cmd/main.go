@@ -15,13 +15,12 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -46,7 +45,7 @@ var saramaLogger = log.New(io.Discard, "[Sarama] ", log.Ldate|log.Lmicroseconds)
 
 func initTracerProvider(exporterType string) *sdktrace.TracerProvider {
 	if exporterType == "" {
-		tp := trace.NewNoopTracerProvider()
+		tp := noop.NewTracerProvider()
 		otel.SetTracerProvider(tp)
 		return nil
 	}
@@ -69,10 +68,12 @@ func exporterTracing(exporterType string) sdktrace.SpanExporter {
 	//Could not use OTEL_TRACES_EXPORTER https://github.com/open-telemetry/opentelemetry-go/issues/2310
 	var exporter sdktrace.SpanExporter
 	var err error
-	//If the env variables needed are defined we set the exporter to Jaeger else it is an opentelemetry exporter
+	//The Jaeger exporter was removed from OpenTelemetry Go, Jaeger natively accepts OTLP so "jaeger" falls back to the OTLP exporter
 	if exporterType == "jaeger" {
-		exporter, err = jaeger.New(jaeger.WithAgentEndpoint()) //from env variable https://github.com/open-telemetry/opentelemetry-go/tree/main/exporters/jaeger#environment-variables
-	} else if exporterType == "otlp" {
+		glog.Warningf("Exporter type \"jaeger\" is deprecated, using the OTLP exporter instead (configure it via OTEL_EXPORTER_OTLP_* env variables)")
+		exporterType = "otlp"
+	}
+	if exporterType == "otlp" {
 		exporter, err = otlptracegrpc.New(context.Background()) //from env variable https://github.com/open-telemetry/opentelemetry-go/blob/main/exporters/otlp/otlptrace/README.md
 	}
 	if err != nil {
