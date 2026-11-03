@@ -17,7 +17,7 @@ release_prepare:
 
 release_version:
 	echo "Changing Docker image tags in install to :$(RELEASE_VERSION)"
-	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?quay.io\/strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?ghcr.io\/dg-i\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
 
 release_pkg:
 	$(CP) -r ./packaging/install ./

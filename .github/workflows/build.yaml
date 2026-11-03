@@ -1,0 +1,71 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release-*'
+  pull_request:
+
+# cancel outdated runs of the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  go_test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # latest patch release of the Go version in go.mod
+          go-version: '1.26'
+      - name: Go Unit Tests
+        run: go test ./internal/... --tags=unit_test
+      # runs against all the supported Kafka versions (single node KRaft clusters via docker compose)
+      - name: Go e2e Tests
+        run: go test ./test/... --tags=e2e -v
+
+  container_build:
+    name: Build Container
+    needs: go_test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      # the container image is pushed (as latest) only for commits on main
+      PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26'
+      - name: Go Build
+        run: |
+          GOARCH=amd64 make go_build
+          GOARCH=arm64 make go_build
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Login to GitHub Container Registry
+        if: env.PUSH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Container Build & Push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          # local context, so that the binaries built above are used
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ env.PUSH == 'true' }}
+          tags: ${{ env.IMAGE }}:latest
