@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 0.8.0
+
 ## 0.7.0
 
 * Added support for Apache Kafka 4.x (ZooKeeper-less, KRaft only clusters), compatible with Apache Kafka 4.0.0, 4.1.0 and 4.2.0
