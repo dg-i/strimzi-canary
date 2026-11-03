@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: Release version (for example 0.7.0 or 0.7.0-rc1)
+        required: true
+        type: string
+      releaseSuffix:
+        description: Release suffix for the additional suffixed image (for example 0 for 0.7.0-0), leave empty to skip it
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release ${{ inputs.releaseVersion }}
+    # releases are done only from release branches
+    if: startsWith(github.ref, 'refs/heads/release-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+      RELEASE_VERSION: ${{ inputs.releaseVersion }}
+      RELEASE_SUFFIX: ${{ inputs.releaseSuffix }}
+    steps:
+      - name: Validate inputs
+        run: |
+          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+            echo "Invalid release version: ${RELEASE_VERSION}"
+            exit 1
+          fi
+          if [[ -n "${RELEASE_SUFFIX}" && ! "${RELEASE_SUFFIX}" =~ ^[0-9]+$ ]]; then
+            echo "Invalid release suffix: ${RELEASE_SUFFIX}"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26'
+      - name: Prepare release artifacts
+        run: make release
+      - name: Go Build
+        run: |
+          GOARCH=amd64 make go_build
+          GOARCH=arm64 make go_build
+      - name: Compute container image tags
+        id: tags
+        run: |
+          tags="${IMAGE}:${RELEASE_VERSION}"
+          if [[ -n "${RELEASE_SUFFIX}" ]]; then
+            tags="${tags},${IMAGE}:${RELEASE_VERSION}-${RELEASE_SUFFIX}"
+          fi
+          echo "tags=${tags}" >> "${GITHUB_OUTPUT}"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Container Build & Push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+      # the release is created as draft (the tag is created only when it gets published), so that smoke tests can be done first
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          if [[ "${RELEASE_VERSION}" == *-rc* ]]; then
+            prerelease="--prerelease"
+          fi
+          gh release create "${RELEASE_VERSION}" --draft ${prerelease} \
+            --target "${GITHUB_SHA}" \
+            --title "${RELEASE_VERSION}" \
+            --generate-notes \
+            "strimzi-canary-${RELEASE_VERSION}.tar.gz" \
+            "strimzi-canary-${RELEASE_VERSION}.zip"

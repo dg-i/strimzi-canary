@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 type ExampleConsumerGroupHandler struct {
@@ -23,7 +23,7 @@ type ExampleConsumerGroupHandler struct {
 func NewConsumerGroupHandler() ExampleConsumerGroupHandler {
 	handler := ExampleConsumerGroupHandler{}
 	handler.mutexWritePartitionPresence = &sync.Mutex{}
-	handler.consumingDone = make(chan bool)
+	handler.consumingDone = make(chan bool, 1)
 	return handler
 }
 
@@ -49,7 +49,11 @@ func (h ExampleConsumerGroupHandler) ConsumeClaim(sess sarama.ConsumerGroupSessi
 		log.Println("msg. arrived")
 		if h.isEveryPartitionConsumed() {
 			log.Println("all partitions consumed")
-			h.consumingDone <- true
+			// not blocking, so that the claim keeps being consumed until the session ends
+			select {
+			case h.consumingDone <- true:
+			default:
+			}
 		}
 		h.mutexWritePartitionPresence.Unlock()
 		sess.MarkMessage(msg, "")

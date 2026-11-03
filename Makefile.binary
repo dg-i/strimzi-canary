@@ -1,10 +1,12 @@
 BINARY ?= strimzi-canary
 RELEASE_VERSION ?= $(shell cat ./release.version)
+# the binary is always built for linux, the architecture defaults to the local one (use GOARCH=amd64 or GOARCH=arm64 to override it)
+GOARCH ?= $(shell go env GOARCH)
 
 .PHONY: go_build
 go_build:
-	echo "Building Golang binary for ${RELEASE_VERSION}..."
-	CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.version=${RELEASE_VERSION}'" -a -installsuffix cgo -o cmd/target/$(BINARY) cmd/main.go
+	echo "Building Golang binary for ${RELEASE_VERSION} (linux/$(GOARCH))..."
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) go build -ldflags="-X 'main.version=${RELEASE_VERSION}'" -a -installsuffix cgo -o cmd/target/linux/$(GOARCH)/$(BINARY) cmd/main.go
 
 .PHONY: go_clean
 go_clean:
