@@ -13,6 +13,7 @@
 * The e2e tests run against single node KRaft Kafka 4.0.0, 4.1.0 and 4.2.0 clusters instead of a ZooKeeper based one
 * Moved the CI from Azure Pipelines to GitHub Actions
 * The container images are multi-arch (`linux/amd64` and `linux/arm64`) and published to `ghcr.io/dg-i/strimzi-canary`
+* The fork is maintained by DG-i and is no longer part of the Strimzi project: removed the references to the Strimzi governance, maintainers, code of conduct and community channels
 * Fixed error-related metrics starting from 0 (#215)
 * Add connection_total metric (deprecating connection_error_total metric which will be removed in future)
 

@@ -46,14 +46,6 @@ After the release workflow is finished, it is always good idea to do some smoke 
 After the smoke tests, review and publish the draft GitHub release created by the release workflow.
 Publishing it creates the release tag (e.g. `0.1.0`) on the release branch commit.
 
-### Announcements
-
-Announce the release on following channels:
-
-* Mailing lists
-* Slack
-* Twitter (if the release is significant enough)
-
 ### Release candidates
 
 Release candidates are built with the same release workflow as the final releases.
