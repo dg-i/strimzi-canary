@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -143,7 +143,7 @@ func (cs *connectionService) connectionCheck() {
 		if err != nil {
 			if util.IsDisconnection(err) {
 				// Kafka brokers close connection to the admin client not able to recover
-				// Sarama issues: https://github.com/Shopify/sarama/issues/2042, https://github.com/Shopify/sarama/issues/1796
+				// Sarama issues: https://github.com/IBM/sarama/issues/2042, https://github.com/Shopify/sarama/issues/1796
 				// Workaround closing the admin client and the reopen on next connection check
 				if err := cs.admin.Close(); err != nil {
 					glog.Fatalf("Error closing the Sarama cluster admin: %v", err)

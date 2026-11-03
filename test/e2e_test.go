@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 const (
@@ -30,22 +30,25 @@ const (
 *  the presence of canary topic,
 *  Liveness of topic (messages being produced),
  */
-func TestCanaryTopicLiveness(t *testing.T) {
+func testCanaryTopicLiveness(t *testing.T) {
 	log.Println("TestCanaryTopic test starts")
 	consumingHandler := NewConsumerGroupHandler()
 	timeout := time.After(time.Second * 10)
 	errs := make(chan error, 1)
+	// cancelling the context at the end makes the consumer leave the group, so it doesn't interfere with tests on the next Kafka version
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	// test itself.
 	go func() {
 		config := sarama.NewConfig()
 		config.Consumer.Return.Errors = true
 		config.Consumer.Offsets.Initial = sarama.OffsetOldest
-		ctx := context.Background()
 		clusterAdmin, err := sarama.NewClusterAdmin([]string{serviceManager.KafkaBrokerAddress}, config)
 		if err != nil {
 			errs <- err
 			return
 		}
+		defer clusterAdmin.Close()
 
 		var topicPartitionCount int
 		// wait for topic creation
@@ -80,8 +83,11 @@ func TestCanaryTopicLiveness(t *testing.T) {
 		// set up consumer group's consumingHandler for Strimzi canary topic
 		topicsToConsume := []string{serviceManager.TopicTestName}
 
-		// group.Consume is blocking
-		go group.Consume(ctx, topicsToConsume, consumingHandler)
+		// group.Consume is blocking, it returns when the context is cancelled
+		go func() {
+			_ = group.Consume(ctx, topicsToConsume, consumingHandler)
+			_ = group.Close()
+		}()
 	}()
 
 	select {
@@ -97,7 +103,7 @@ func TestCanaryTopicLiveness(t *testing.T) {
 	close(errs)
 }
 
-func TestEndpointsAvailability(t *testing.T) {
+func testEndpointsAvailability(t *testing.T) {
 	log.Println("TestEndpointsAvailability test starts")
 
 	var testInputs = [...]struct {
@@ -127,17 +133,17 @@ func TestEndpointsAvailability(t *testing.T) {
 
 }
 
-func TestMetricServerPrometheusContent(t *testing.T) {
+func testMetricServerPrometheusContent(t *testing.T) {
 	log.Println("TestMetricServerPrometheusContent test starts")
 
 	resp, err := http.Get(httpUrlPrefix + metricsEndpoint)
 	if err != nil {
-		t.Fatalf("Failed to get response 1")
+		t.Fatalf("Failed to get response 1: %v", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Fatalf("Failed to get response 1 body")
+		t.Fatalf("Failed to get response 1 body: %v", err)
 	}
 	totalRequestCountT1, _ := strconv.Atoi(parseSucReqRateFromMetrics(string(body)))
 	if totalRequestCountT1 < 1 {
@@ -146,12 +152,12 @@ func TestMetricServerPrometheusContent(t *testing.T) {
 
 	resp2, err := http.Get(httpUrlPrefix + metricsEndpoint)
 	if err != nil {
-		t.Fatalf("Failed to get response 2")
+		t.Fatalf("Failed to get response 2: %v", err)
 	}
 	defer resp2.Body.Close()
 	body2, err := io.ReadAll(resp2.Body)
 	if err != nil {
-		t.Fatalf("Failed to get response 2 body")
+		t.Fatalf("Failed to get response 2 body: %v", err)
 	}
 
 	// totalRequestCountT2 stores value produced after defined number of seconds from obtaining totalRequestCountT1
@@ -163,7 +169,7 @@ func TestMetricServerPrometheusContent(t *testing.T) {
 }
 
 // Test verifies correctness of canary's metric (produced records)
-func TestMetricServerCanaryContent(t *testing.T) {
+func testMetricServerCanaryContent(t *testing.T) {
 	log.Println("TestMetricServerCanaryContent test starts")
 	// first record is created only after reconcile time, before that there is no record in metrics
 	waitTimeMilliseconds, _ := strconv.Atoi(serviceManager.ReconcileIntervalTime)
@@ -172,13 +178,13 @@ func TestMetricServerCanaryContent(t *testing.T) {
 	log.Println("TestMetricServerCanaryContent getting response 1")
 	resp, err := http.Get(httpUrlPrefix + metricsEndpoint)
 	if err != nil {
-		t.Fatalf("Failed to get response 1")
+		t.Fatalf("Failed to get response 1: %v", err)
 	}
 	defer resp.Body.Close()
 	log.Println("TestMetricServerCanaryContent getting response 1 body")
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Fatalf("Failed to read response 1 body")
+		t.Fatalf("Failed to read response 1 body: %v", err)
 	}
 	log.Println("TestMetricServerCanaryContent parsing response 1 body")
 	totalProducedRecordsCount, err := strconv.Atoi(parseCanaryRecordsProducedFromMetrics(string(body)))
@@ -193,13 +199,13 @@ func TestMetricServerCanaryContent(t *testing.T) {
 	log.Println("TestMetricServerCanaryContent getting response 2")
 	resp2, err := http.Get(httpUrlPrefix + metricsEndpoint)
 	if err != nil {
-		t.Fatalf("Failed to get response 2")
+		t.Fatalf("Failed to get response 2: %v", err)
 	}
 	defer resp2.Body.Close()
 	log.Println("TestMetricServerCanaryContent getting response 2 body")
 	body2, err := io.ReadAll(resp2.Body)
 	if err != nil {
-		t.Fatalf("Failed to read response 2 body")
+		t.Fatalf("Failed to read response 2 body: %v", err)
 	}
 
 	log.Println("TestMetricServerCanaryContent parsing response 2 body")

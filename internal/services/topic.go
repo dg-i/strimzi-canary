@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -124,7 +124,7 @@ func (ts *topicService) Reconcile() (TopicReconcileResult, error) {
 	result, err := ts.reconcileTopic()
 	if err != nil && util.IsDisconnection(err) {
 		// Kafka brokers close connection to the topic service admin client not able to recover
-		// Sarama issues: https://github.com/Shopify/sarama/issues/2042, https://github.com/Shopify/sarama/issues/1796
+		// Sarama issues: https://github.com/IBM/sarama/issues/2042, https://github.com/Shopify/sarama/issues/1796
 		// Workaround closing the topic service with its admin client and then reopen on next reconcile
 		ts.Close()
 	}

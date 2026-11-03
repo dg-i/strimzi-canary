@@ -10,10 +10,10 @@ import (
 	"context"
 	"strconv"
 
-	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
+	"github.com/dnwe/otelsarama"
 	"go.opentelemetry.io/otel"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"

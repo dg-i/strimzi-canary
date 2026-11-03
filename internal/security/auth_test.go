@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/strimzi/strimzi-canary/internal/config"
 )
 
